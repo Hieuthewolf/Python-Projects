@@ -3,25 +3,40 @@ import random
 import pygame
 import time
 
-#Global Variables
-rows = 20
-width = 800
+pygame.init()
 
-def getImage(imagePath, head = False):
+#Global Variables
+rows = 22
+width = 1200
+height = 840
+
+def getImage(imagePath, head = False, food = False):
   image = pygame.image.load("Images/" + imagePath)
   if head:
-    picture = pygame.transform.scale(image, (80, 80))
+    picture = pygame.transform.scale(image, (70, 70))
+  elif food:
+    picture = pygame.transform.scale(image, ((width // rows) + 20, (height // rows) + 10))
   else:
-    picture = pygame.transform.scale(image, (width // rows, width // rows))
+    picture = pygame.transform.scale(image, (width // rows, height // rows))
 
   return picture
 
+def backgroundImage(imagePath, width, height):
+    image = pygame.image.load("Images/" + imagePath)
+    background = pygame.transform.scale(image, (width, height))
+    new_background = background.copy()
+    alpha = 128
+    new_background.fill((255, 255, 255, alpha), None, pygame.BLEND_RGBA_MULT)
+
+    return new_background
+
 #Global Images
 hieu = getImage("hieu.PNG", True)
-banana = getImage("banana.jpg")
-bomb = getImage("bomb.jpg")
-watermelon = getImage("watermelon.jpg")
-rice = getImage("rice.jpg")
+zakum = getImage("zakum.png", False, True)
+bomb = getImage("thanatos.png", False, True)
+horntail = getImage("horntail.png", False, True)
+slime = getImage("slime.png")
+background = backgroundImage("elnath.jpg", width, height)
 
 class Square(object):
   def __init__(self, start, x_direction = 1, y_direction = 0, color = (255,192,203)):
@@ -31,6 +46,7 @@ class Square(object):
     self.color = color
     self.rows = rows
     self.width = width
+    self.height = height
 
   def move(self, x_direction, y_direction):
     self.x_direction = x_direction
@@ -38,27 +54,28 @@ class Square(object):
     self.pos = (self.pos[0] + self.x_direction, self.pos[1] + self.y_direction)
 
   def draw(self, surface, imageType):
-    distance = self.width // self.rows
+    w_distance = self.width // self.rows
+    h_distance = self.height // self.rows
     i = self.pos[0]
     j = self.pos[1]
 
     if imageType == "snakeHead":
-      surface.blit(hieu, (i * distance - 20, j * distance - 20))
+      surface.blit(hieu, (i * w_distance - 7, j * h_distance - 15))
 
     elif imageType == "snakeBody":
-      surface.blit(rice, (i * distance + 1, j * distance + 1))
+      surface.blit(slime, (i * w_distance + 1, j * h_distance + 1))
 
-    elif imageType == "banana":
-      surface.blit(banana, (i * distance + 1, j * distance + 1))
+    elif imageType == "zakum":
+      surface.blit(zakum, (i * w_distance + 1, j * h_distance + 1))
 
     elif imageType == "bomb":
-      surface.blit(bomb, (i * distance + 1, j * distance + 1))
+      surface.blit(bomb, (i * w_distance + 1, j * h_distance + 1))
 
-    elif imageType == "watermelon":
-      surface.blit(watermelon, (i * distance + 1, j * distance + 1))
+    elif imageType == "baron":
+      surface.blit(horntail, (i * w_distance + 1, j * h_distance + 1))
 
     else:
-      pygame.draw.rect(surface, self.color, (i * distance + 1, j * distance + 1, distance - 2, distance - 2))
+      pygame.draw.rect(surface, self.color, (i * w_distance + 1, j * h_distance + 1, w_distance - 2, h_distance - 2))
 
 class Snake(object):
   body = []
@@ -187,15 +204,18 @@ def drawGrid(width, rows, surface):
 def reDrawWindow(surface):
   global rows, width, snake
   surface.fill((0, 0, 0))
-  snake.draw(surface, )
 
-  goodSnack.draw(surface, "banana")
+  surface.blit(background, (0, 0))
 
-  badSnack.draw(surface, 'bomb')
+  snake.draw(surface)
 
-  timerSnack.draw(surface, 'watermelon')
+  goodSnack.draw(surface, "zakum")
 
-  drawGrid(width, rows, surface)
+#   badSnack.draw(surface, 'bomb')
+
+  timerSnack.draw(surface, 'baron')
+
+#   drawGrid(width, rows, surface)
   pygame.display.update()
 
 def randomSnack(rows, item):
@@ -212,16 +232,19 @@ def randomSnack(rows, item):
   return (x, y)
 
 def main():
-  global snake, goodSnack, badSnack, timerSnack
+  global snake, goodSnack, badSnack, timerSnack, background
 
-  window = pygame.display.set_mode((width, width))
+  window = pygame.display.set_mode((width, height))
   snake = Snake((255,192,203), (10, 10))
+
+  pygame.mixer.music.load("Music/elnath.mp3")
+  pygame.mixer.music.play(1)
 
   #Bad Snack
   goodSnack = Square(randomSnack(rows, snake))
 
   #Good Snack
-  badSnack = Square(randomSnack(rows, snake), color = (255, 0, 0))
+#   badSnack = Square(randomSnack(rows, snake), color = (255, 0, 0))
 
   #Timer Snack
   timerSnack = Square(randomSnack(rows, snake), color = (255, 204, 255))
@@ -234,8 +257,8 @@ def main():
 
   while game:
 
-    pygame.time.delay(15)
-    clock.tick(90)
+    pygame.time.delay(1)
+    clock.tick(30)
     snake.move()
 
     if snake.body[0].pos == goodSnack.pos:
@@ -243,10 +266,10 @@ def main():
 
       goodSnack = Square(randomSnack(rows, snake), color = (0, 255, 0))
 
-    if snake.body[0].pos == badSnack.pos:
-      snake.delSquare()
+    # if snake.body[0].pos == badSnack.pos:
+    #   snake.delSquare()
 
-      badSnack = Square(randomSnack(rows, snake), color = (255, 0, 0))
+    #   badSnack = Square(randomSnack(rows, snake), color = (255, 0, 0))
 
     seconds = int(time.time() - time_start)
 
